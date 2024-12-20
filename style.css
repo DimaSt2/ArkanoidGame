@@ -1,0 +1,41 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    
+    /* width: 200px; */
+    /* height: 900px; */
+    /* margin: 0; */
+    /* padding: 0; */
+    /* overflow: hidden; */
+    
+    /* height: auto; */
+    /* display: flex; */
+    /* justify-content: center; */
+    /* width: fit-content; */
+    /* padding: 0 auto; */
+    /* margin: 0 auto; */
+    /* height: 1800px; */
+    /* border: 2px solid red; */
+    background-image: url('assets/background-body.jpg');
+    /* background-repeat: no-repeat; */
+    /* background-size: cover; */
+    /* overflow: hidden; */
+    /* background-color: gray; */
+}
+
+/* .main {
+    width: fit-content;
+    height: 100%;
+    margin: 0 auto;
+} */
+
+.left, .right {
+    /* position: absolute; */
+    width: 500px;
+    left: 950px;
+    /* background-image: url('assets/background-body.png'); */
+    /* z-index: 500; */
+}
