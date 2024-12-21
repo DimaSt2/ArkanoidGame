@@ -39,23 +39,39 @@
 
       var gameWidth = 800;
       var gameHeight = 600;
+      
+      var background;
 
       var paddle;
       var ball;
 
       var blocks;
-      var blocksArray = [
-        
-        '00001111110000',
-        '00011111111',
-        '11111111111111',
+      var stageBlocks1 = [
+        '1'
+        // '00001111110000',
+        // '00011111111',
         // '11111111111111',
         // '11111111111111',
-        '11111111111111',
-        '11111111111111',
-        '00011111111',
-        '00001111110000',
-      ]
+        // '11111111111111',
+        // '11111111111111',
+        // '11111111111111',
+        // '00011111111',
+        // '00001111110000',
+      ];
+
+      var stageBlocks2 = [
+
+          '1111'
+        // '00001111110000',
+        // '00011111111',
+        // '11111111111111',
+        // '11111111111111',
+        // '11111111111111',
+        // '11111111111111',
+        // '11111111111111',
+        // '00011111111',
+        // '00001111110000',
+      ];
 
       var score;
       var scoreText;
@@ -68,25 +84,42 @@
       var enterKey;
 
       var gameState;
+      var stage = 1;
+
+      var backgroundMusic;
+      var destroyBlockSound;
 
 
       function preload() {
         
-        this.load.image('background', 'assets/background1.jpg');
+        this.load.image('bg-stage1', 'assets/bg-stage1.jpg');
         this.load.image('paddle', 'assets/paddle.png');
         this.load.image('ball', 'assets/ballBlue.png');
         this.load.image('block', 'assets/block.png');
+
+        this.load.image('bg-stage2', 'assets/bg-stage2.jpg');
+
+
         this.load.audio('backgroundMusic', 'assets/mainTheme.ogg');
+        this.load.audio('destroyBlock', 'assets/destroyBlock.ogg');
+
       }
 
       function create() {
-        this.backgroundMusic = this.sound.add('backgroundMusic');
-        this.backgroundMusic.play({
-        loop: true, 
-        volume: 0.5 
-    });
 
-        this.add.image(400, 300, 'background');
+        destroyBlockSound = this.sound.add('destroyBlock');
+
+
+
+        backgroundMusic = this.sound.add('backgroundMusic');
+        backgroundMusic.play({
+            loop: true, 
+            volume: 0.5 
+        });
+        
+        background = this.add.image(400, 300, 'bg-stage1');
+        
+        
         
         paddle = this.physics.add.image(400, 550, 'paddle');
         paddle.setCollideWorldBounds(true);
@@ -99,7 +132,7 @@
         this.physics.world.checkCollision.down = false;
 
         blocks = this.physics.add.group()
-        generateBlocks()
+        // generateBlocks(stageBlocks1)
 
         scoreText = this.add.text(30, 50, 'Score: 0', {font: '700 32px Courier', color: '#f5f5dc'})
         livesText = this.add.text(610, 50, 'Lives: 3', {font: '700 32px Courier', color: 'yellow'})
@@ -107,58 +140,64 @@
 
         cursors = this.input.keyboard.createCursorKeys()
         enterKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER)
-        console.log('enterKey: ', enterKey);
 
         this.physics.add.collider(ball, paddle, collideBallPaddle)
         this.physics.add.collider(ball, blocks, collideBallBlock)
 
-        gameInit()
+        gameInit(stageBlocks1)
         gameReady()
         
       }
 
       function update() {
         paddle.setVelocityX(0);
-        if(cursors.left.isDown) {
-          paddle.setVelocityX(-300);
-        } else if (cursors.right.isDown) {
-          paddle.setVelocityX(300);
-        }
+          if(cursors.left.isDown) {
+            paddle.setVelocityX(-300);
+          } else if (cursors.right.isDown) {
+            paddle.setVelocityX(300);
+          }
 
-        //шар на палке прикреплен при старте
-        if(gameState === 1) {
-          ball.setX(paddle.x)
-        }
+        // if(gameState === 1) {
+        //   ball.setX(paddle.x)
+        // }
 
         if(gameState === 1) {
-          if(cursors.space.isDown) {
-              gameProcess()
+            ball.setX(paddle.x)  //закрепление шара за палкой
+            if(cursors.space.isDown) {
+                gameProcess()
             } 
 
-          } else if (gameState === 2){
-              if(ball.body.y > gameHeight){
-                lives--;
-                livesText.setText(`Lives: ${lives}`)
-                    if(lives > 0) {
-                        gameReady()
-                      } else {
-                      gameFinish('press Enter')
-                    }
-              }  
-              else if(blocks.countActive() === 0) {
-                gameFinish('You won')
-              } 
+        } else if (gameState === 2){
+                  if(ball.body.y > gameHeight){
+                    lives -= 1;
+                    livesText.setText(`Lives: ${lives}`)
+                        if(lives > 0) {
+                            gameReady()
+                          } else {
+                          gameFinish('Game over')
+                        }
+
+                  } else if(blocks.countActive() === 0) {
+                      gameFinish('Stage cleared')
+                      stage += 1;
+                      this.time.delayedCall(2000, () => {
+                      background = this.add.image(400, 300, 'bg-stage2');
+                      gameInit(stageBlocks2)
+                      gameReady()
+                    });
+                  } 
           } else if(gameState === 3){
-            if(enterKey.isDown){
-            gameInit()
-            gameReady()
-          }
+               if(enterKey.isDown){
+                 background = this.add.image(400, 300, 'bg-stage1');
+                 gameInit(stageBlocks1)
+                 gameReady()
+               }
           }
         }
 
 
     // создание блоков
-    function generateBlocks () {
+    function generateBlocks (blocksArray) {
         var rows = blocksArray.length;
         var cols = blocksArray[0].length;
 
@@ -181,9 +220,6 @@
         })
     }
 
-
-
-
      function collideBallPaddle(ball, paddle) {
         var newVelocity = ball.body.velocity.x + paddle.body.velocity.x;
         if (Math.abs(newVelocity) > 200) {
@@ -193,6 +229,7 @@
         var lossVelocity = paddle.body.velocity.x * Math.random() * 20 /100;
         newVelocity -= lossVelocity;
         ball.setVelocityX(newVelocity);
+
      }
 
      function collideBallBlock(ball, block) {
@@ -200,17 +237,24 @@
          score += 10;
          scoreText.setText(`Score: ${score}`)
 
+         destroyBlockSound.play();
      }
 
 
-     function gameInit() {
+     function gameInit(stage) {
         score = 0;
         scoreText.setText(`Score: ${score}`);
-        lives = 3;
+        scoreText.setDepth(2)
+        lives = 1;
         livesText.setText(`Lives: ${lives}`);
-        blocks.children.iterate(function(child) {
-          child.enableBody = (true, child.x, child.y, true, true);
-        })
+        livesText.setDepth(2)
+
+        blocks.clear(true, true)
+        generateBlocks(stage)
+
+        // blocks.children.iterate(function(child) {
+        //   child.enableBody = (true, child.x, child.y, true, true);
+        // })
         ball.enableBody(true, 0, 0, true, true)
      }
 
@@ -218,30 +262,30 @@
       gameState = 1;
       ball.setVelocity(0, 0);
       ball.setX(paddle.x);  
-      ball.setY(paddle.y - paddle.body.height / 2 - ball.height / 2);
+      ball.setY(paddle.y - paddle.height / 2 - ball.height / 2);
+      ball.setDepth(2);
+      paddle.setDepth(2);
       mainText.setText('Press SPACE');
       mainText.setVisible(true);
+      mainText.setDepth(2);
+
     }
 
     function gameProcess () {
       gameState = 2;
       ball.setVelocity(10, -200);
       mainText.setVisible(false);
-
-
     }
     
     function gameFinish(text) {
         gameState = 3;
         mainText.setText(text)
         mainText.setVisible(true);
-        ball.disableBody(true);
-
-
+        mainText.setDepth(2);
+        ball.disableBody(true, true);
     }
 
 
-    
     </script>
   </body>
 </html>
