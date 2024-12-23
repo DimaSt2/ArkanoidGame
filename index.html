@@ -1,23 +1,21 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.85.2/dist/phaser-arcade-physics.min.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body id="body">
-
     <script>
-     
       const config = {
         type: Phaser.AUTO,
         scale: {
-            mode: Phaser.Scale.FIT,
-            autoCenter: Phaser.Scale.CENTER_HORIZONTALLY,
-            width: 800,
-            height: 600,
-             },
-        
+          mode: Phaser.Scale.FIT,
+          autoCenter: Phaser.Scale.CENTER_HORIZONTALLY,
+          width: 800,
+          height: 600,
+        },
+
         physics: {
           default: "arcade",
           arcade: {
@@ -35,264 +33,307 @@
 
       const game = new Phaser.Game(config);
 
-      var gameWidth = config.scale.width;
-      var gameHeight = config.scale.height;
-      
-      var background;
+      let gameWidth = config.scale.width;
+      let gameHeight = config.scale.height;
 
-      var paddle;
-      var ball;
+      let background;
 
-      var blocks;
-      var stageBlocks1 = [
-        // '1'
-        '00001111110000',
-        '00011111111000',
-        '11111111111111',
-        '11111111111111',
-        '11111111111111',
-        '11111111111111',
-        '00011111111000',
-        '00001111110000',
+      let paddle;
+      let ball;
+      let blocks;
+
+      const stageBlocks1 = [
+        "00001111110000",
+        "00011111111000",
+        "00111111111100",
+        "00111111111100",
+        "00111111111100",
+        "00111111111100",
+        "00011111111000",
+        "00001111110000",
       ];
 
-      var stageBlocks2 = [
-        // '1'
-        '00001111110000',
-        '00011111111000',
-        '11110000001111',
-        '11110000001111',
-        '11110000001111',
-        '11111111111111',
-        '11110000001111',
-        '11110000001111',
-        '11110000001111',
-        '00011111111000',
-        '00001111110000',
+      const stageBlocks2 = [
+        "00011111111000",
+        "11110000001111",
+        "11110000001111",
+        "11110000001111",
+        "11111111111111",
+        "11110000001111",
+        "11110000001111",
+        "11110000001111",
+        "00011111111000",
       ];
 
-      var score = 0;
-      var scoreText;
-      var lives = 3;
-      var livesText;
-      var mainText;
-      var settingText;
+      let score = 0;
+      let scoreText;
+      let scoreTextWidth;
+      let lives = 3;
+      let livesText;
+      let mainText;
+      let settingText;
+      let graphics;
 
-      var cursors;
-      var enterKey;
-      var muted = false;
+      let cursors;
+      let enterKey;
+      let muted = false;
 
-      var gameState;
-      var stage = 1;
+      let gameState;
+      let stage = 1;
 
-      var backgroundMusic;
-      var destroyBlockSound;
+      let backgroundMusic;
+      let destroyBlockSound;
 
       function preload() {
-        this.load.image('bg-stage1', 'assets/bg-stage1.jpg');
-        this.load.image('paddle', 'assets/paddle.png');
-        this.load.image('ball', 'assets/ballBlue.png');
-        this.load.image('block', 'assets/block.png');
+        this.load.image("bg-stage1", "assets/bg-stage1.jpg");
+        this.load.image("paddle", "assets/paddle.png");
+        this.load.image("ball", "assets/ballBlue.png");
+        this.load.image("block", "assets/block.png");
 
-        this.load.image('bg-stage2', 'assets/bg-stage2.jpg');
+        this.load.image("bg-stage2", "assets/bg-stage2.jpg");
 
-        this.load.audio('backgroundMusic', 'assets/mainTheme.ogg');
-        this.load.audio('destroyBlock', 'assets/destroyBlock.ogg');
+        this.load.audio("backgroundMusic", "assets/mainTheme.ogg");
+        this.load.audio("destroyBlock", "assets/destroyBlock.ogg");
       }
 
       function create() {
-        backgroundMusic = this.sound.add('backgroundMusic');
+        backgroundMusic = this.sound.add("backgroundMusic");
         backgroundMusic.play({
-            loop: true, 
-            volume: 0.5 
+          loop: true,
+          volume: 0.5,
         });
 
-        destroyBlockSound = this.sound.add('destroyBlock');
-        
-        background = this.add.image(400, 300, 'bg-stage1');
-        
-        paddle = this.physics.add.image(400, 550, 'paddle');
+        destroyBlockSound = this.sound.add("destroyBlock");
+
+        background = this.add.image(400, 300, "bg-stage1");
+
+        paddle = this.physics.add.image(400, 550, "paddle");
         paddle.setCollideWorldBounds(true);
         paddle.body.immovable = true;
 
-        ball = this.physics.add.image(400, 525, 'ball');
-        ball.setVelocity(20, -200);  
+        ball = this.physics.add.image(400, 525, "ball");
+        ball.setVelocity(20, -200);
         ball.setCollideWorldBounds(true);
-        ball.setBounce(1, 1)
+        ball.setBounce(1, 1);
         this.physics.world.checkCollision.down = false;
 
-        blocks = this.physics.add.group()
+        blocks = this.physics.add.group();
 
-        scoreText = this.add.text(30, 50, 'Score: 0', {font: '700 32px Courier', color: '#f5f5dc'})
-        livesText = this.add.text(610, 50, 'Lives: 3', {font: '700 32px Courier', color: 'yellow'})
-        mainText = this.add.text(gameWidth / 2, gameHeight / 2.6, 'Press Space', {font: '700 40px Courier', align: 'center', color: '#f5f5dc'})
-        settingText = this.add.text(20, 400, 'Space - start \nP - pause \nR - resume \nM - music on/off', {font: '700 14px Courier', color: '#f5f5dc'})
-        mainText.setOrigin(0.5)
+        graphics = this.add.graphics();
 
-        cursors = this.input.keyboard.createCursorKeys()
-        enterKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER)
+        scoreText = this.add.text(30, 50, "Score:  ", {
+          font: "700 26px Courier",
+          color: "#f5f5dc",
+        });
+        scoreTextWidth = scoreText.width;
+        addTextBg(0x000000, scoreText);
 
-        this.physics.add.collider(ball, paddle, collideBallPaddle)
-        this.physics.add.collider(ball, blocks, collideBallBlock)
+        livesText = this.add.text(650, 50, "Lives:  ", {
+          font: "700 26px Courier",
+          color: "#f5f5dc",
+        });
+        addTextBg(0x000000, livesText);
 
-        gameInit(stageBlocks1, score, lives)
-        gameReady()
+        mainText = this.add.text(
+          gameWidth / 2,
+          gameHeight / 2.75,
+          "Press Space",
+          { font: "700 40px Courier", align: "center", color: "#FFFFFF" }
+        );
+        mainText.setOrigin(0.5);
 
-        this.input.keyboard.on('keydown-P', () => game.loop.sleep()) 
-        this.input.keyboard.on('keydown-R', () => game.loop.wake()) 
+        settingText = this.add.text(
+          20,
+          400,
+          "Space - start \nP - pause \nR - resume \nM - music on/off",
+          { font: "700 14px Courier", color: "#f5f5dc" }
+        );
+
+        cursors = this.input.keyboard.createCursorKeys();
+        enterKey = this.input.keyboard.addKey(
+          Phaser.Input.Keyboard.KeyCodes.ENTER
+        );
+
+        this.physics.add.collider(ball, paddle, collideBallPaddle);
+        this.physics.add.collider(ball, blocks, collideBallBlock);
         
-        this.input.keyboard.on('keydown-M', () => {
+
+        gameInit(stageBlocks1, score, lives);
+        gameReady();
+
+        this.input.keyboard.on("keydown-P", () => game.loop.sleep());
+        this.input.keyboard.on("keydown-R", () => game.loop.wake());
+
+        this.input.keyboard.on("keydown-M", () => {
           muted = !muted;
-          muted ? backgroundMusic.play({loop: false, volume: 0}) : backgroundMusic.play({loop: true, volume: 0.5})
-        })       
-        
+          muted
+            ? backgroundMusic.play({ loop: false, volume: 0 })
+            : backgroundMusic.play({ loop: true, volume: 0.5 });
+        });
       }
 
       function update() {
+        let currentWidth = scoreText.width;
+        if (scoreTextWidth !== currentWidth) {
+          addTextBg(0x000000, scoreText);
+          scoreTextWidth = currentWidth;
+        }
 
         paddle.setVelocityX(0);
-          if(cursors.left.isDown) {
-            paddle.setVelocityX(-300);
-          } else if (cursors.right.isDown) {
-            paddle.setVelocityX(300);
-          }
+        if (cursors.left.isDown) {
+          paddle.setVelocityX(-300);
+        } else if (cursors.right.isDown) {
+          paddle.setVelocityX(300);
+        }
 
-        if(gameState === 1) {
-            ball.setX(paddle.x)  //закрепление шара за палкой
-            if(cursors.space.isDown) {
-                gameProcess()
-            } 
-        } 
-
-        if (gameState === 2){
-                  if(ball.body.y > gameHeight){
-                    lives -= 1;
-                    livesText.setText(`Lives: ${lives}`)
-                        if(lives > 0) {
-                            gameReady()
-                          } else {
-                          gameFinish('Game over')
-                        }
-                  }  
-
-                  if(blocks.countActive() === 0 && stage === 1) {
-                      gameFinish('Stage cleared')
-                      this.time.delayedCall(2000, () => {
-                        background = this.add.image(400, 300, 'bg-stage2');
-                        gameInit(stageBlocks2, score, lives)
-                        gameReady()
-                        stage += 1;
-                      });
-                  } 
-
-                  if(blocks.countActive() === 0 && stage === 2) {
-                      gameFinish(`You complete game! \n Total score ${score} \n \n Press ENTER to restart game`)
-                      stage = 1;
-                  } 
-          } 
-          
-          if(gameState === 3){
-               if(enterKey.isDown){
-                 background = this.add.image(400, 300, 'bg-stage1');
-                 score = 0;
-                 lives = 3;
-                 gameInit(stageBlocks1, score, lives)
-                 gameReady()
-               }
+        if (gameState === 1) {
+          ball.setX(paddle.x); //закрепление шара за палкой
+          if (cursors.space.isDown) {
+            gameProcess();
           }
         }
 
-
-    // создание блоков
-    function generateBlocks (blocksArray) {
-        var rows = blocksArray.length;
-        var cols = blocksArray[0].length;
-
-        var blockSize = 32;  // размер картинки
-
-        var offsetX = (gameWidth - cols * blockSize) / 2 + blockSize / 2; // смещение группы блоков на центр
-        var offsetY = gameHeight * 0.2;
-
-        for (var i = 0; i < rows; i++) {
-            for (var j = 0; j < cols; j++) {
-                if(blocksArray[i][j] === '1') {
-                    blocks.create(j * blockSize + offsetX, i * blockSize + offsetY, 'block');
-                }
+        if (gameState === 2) {
+          if (ball.body.y > gameHeight) {
+            lives -= 1;
+            livesText.setText(`Lives: ${lives}`);
+            if (lives > 0) {
+              gameReady();
+            } else {
+              gameFinish("Game over \nENTER to restart");
             }
+          }
+
+          if (blocks.countActive() === 0 && stage === 1) {
+            gameFinish("Stage cleared");
+            this.time.delayedCall(2000, () => {
+              background = this.add.image(400, 300, "bg-stage2");
+              gameInit(stageBlocks2, score, lives);
+              gameReady();
+              stage += 1;
+            });
+          }
+
+          if (blocks.countActive() === 0 && stage === 2) {
+            gameFinish(
+              `You complete game! \n Total score ${score} \n \n Press ENTER to restart game`
+            );
+            stage = 1;
+          }
         }
 
-        blocks.children.iterate(function(child) {
+        if (gameState === 3) {
+          if (enterKey.isDown) {
+            background = this.add.image(400, 300, "bg-stage1");
+            score = 0;
+            lives = 3;
+            gameInit(stageBlocks1, score, lives);
+            gameReady();
+          }
+        }
+      }
+
+      function addTextBg(color, text) {
+        graphics.fillStyle(color, 1);
+        graphics.fillRoundedRect(
+          text.x - 10,
+          text.y - 10,
+          text.width + 20,
+          text.height + 20,
+          15
+        );
+        graphics.setDepth(1);
+        graphics.setAlpha(0.7);
+      }
+
+      function generateBlocks(blocksArray) {
+        let rows = blocksArray.length;
+        let cols = blocksArray[0].length;
+
+        let blockSize = 32; // размер картинки
+
+        let offsetX = (gameWidth - cols * blockSize) / 2 + blockSize / 2; // смещение группы блоков на центр
+        let offsetY = gameHeight * 0.2;
+
+        for (let i = 0; i < rows; i++) {
+          for (let j = 0; j < cols; j++) {
+            if (blocksArray[i][j] === "1") {
+              blocks.create(
+                j * blockSize + offsetX,
+                i * blockSize + offsetY,
+                "block"
+              );
+            }
+          }
+        }
+
+        blocks.children.iterate(function (child) {
           child.body.immovable = true;
-        })
-    }
+        });
+      }
 
-     function collideBallPaddle(ball, paddle) {
-        var newVelocity = ball.body.velocity.x + paddle.body.velocity.x;
+      function collideBallPaddle(ball, paddle) {
+        let newVelocity = ball.body.velocity.x + paddle.body.velocity.x;
         if (Math.abs(newVelocity) > 200) {
-            newVelocity = 200;
+          newVelocity = 200;
         }
 
-        // paddle.scaleX = 1.5;
-
-        var lossVelocity = paddle.body.velocity.x * Math.random() * 20 /100;
+        let lossVelocity = (paddle.body.velocity.x * Math.random() * 20) / 100;
         newVelocity -= lossVelocity;
         ball.setVelocityX(newVelocity);
+      }
 
-     }
+      function collideBallBlock(ball, block) {
+        block.disableBody(true, true);
+        score += 10;
+        scoreText.setText(`Score: ${score}`);
 
-     function collideBallBlock(ball, block) {
-         block.disableBody(true, true);
-         score += 10;
-         scoreText.setText(`Score: ${score}`)
+        destroyBlockSound.play();
+      }
 
-         destroyBlockSound.play();
-     }
-
-     function gameInit(stage, score, lives) {
+      function gameInit(stage, score, lives) {
         score = score;
         scoreText.setText(`Score: ${score}`);
-        scoreText.setDepth(2)
+        scoreText.setDepth(2);
         lives = lives;
         livesText.setText(`Lives: ${lives}`);
-        livesText.setDepth(2)
+        livesText.setDepth(2);
 
-        blocks.clear(true, true)
-        generateBlocks(stage)
+        blocks.clear(true, true);
+        generateBlocks(stage);
+        
+        ball.enableBody(true, 0, 0, true, true);
+      }
 
-        // blocks.children.iterate(function(child) {
-        //   child.enableBody = (true, child.x, child.y, true, true);
-        // })
-        ball.enableBody(true, 0, 0, true, true)
-     }
-
-    function gameReady() {
-      gameState = 1;
-      ball.setVelocity(0, 0);
-      ball.setX(paddle.x);  
-      ball.setY(paddle.y - paddle.height / 2 - ball.height / 2);
-      ball.setDepth(2);
-      paddle.setDepth(2);
-      mainText.setText('Press SPACE');
-      mainText.setVisible(true);
-      mainText.setDepth(2);
-      settingText.setText('Space - start \nP - pause \nR - resume \nM - music on/off')
-      settingText.setDepth(2);
-    }
-
-    function gameProcess () {
-      gameState = 2;
-      ball.setVelocity(10, -200);
-      mainText.setVisible(false);
-    }
-    
-    function gameFinish(text) {
-        gameState = 3;
-        mainText.setText(text)
+      function gameReady() {
+        gameState = 1;
+        ball.setVelocity(0, 0);
+        ball.setX(paddle.x);
+        ball.setY(paddle.y - paddle.height / 2 - ball.height / 2);
+        ball.setDepth(2);
+        paddle.setDepth(2);
+        mainText.setText("Press SPACE");
         mainText.setVisible(true);
         mainText.setDepth(2);
-        mainText.setOrigin(0.5)
+        settingText.setText(
+          "Space - start \nP - pause \nR - resume \nM - music on/off"
+        );
+        settingText.setDepth(2);
+      }
+
+      function gameProcess() {
+        gameState = 2;
+        ball.setVelocity(10, -200);
+        mainText.setVisible(false);
+      }
+
+      function gameFinish(text) {
+        gameState = 3;
+        mainText.setText(text);
+        mainText.setVisible(true);
+        mainText.setDepth(2);
         ball.disableBody(true, true);
-    }
+      }
     </script>
   </body>
 </html>
